@@ -1,65 +1,56 @@
 {
-  "version": "2.0.0",
-  "tasks": [
-    {
-      "label": "Compile",
-      "command": "g++", //编译程序
-      "args": [
-        "-g",
-        "${file}", //指定编译源代码文件
-        "-o",
-        "${workspaceRoot}\\Debug\\${fileBasenameNoExtension}.exe", // 指定输出文件名，不加该参数则默认输出 a.exe
-        "-ggdb3", // 生成和调试有关的信息
-        "-Wall", // 开启额外警告
-        "-static-libgcc", // 静态链接
-        "-std=c++2a", //使用 C++20 标准
-        "-Wno-format",
-        "-lws2_32" ,
-        "-finput-charset=UTF-8", //输入编译器文本编码 默认为 UTF-8
-        "-fexec-charset=UTF-8" //编译器输出文本编码 自行选择
-      ],
-      "type": "shell",
-      "presentation": {
-        "echo": true,
-        "reveal": "silent", // 在“终端”中显示编译信息的策略，可以为always，silent，never
-        "focus": false,
-        "panel": "shared" // 不同的文件的编译信息共享一个终端面板
-      },
-      "problemMatcher": {
-        "owner": "cpp",
-        "fileLocation": [
-          "relative",
-          "\\"
-        ],
-        "pattern": {
-          "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
-          "file": 1,
-          "line": 2,
-          "column": 3,
-          "severity": 4,
-          "message": 5
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build OnlineGame",
+            "type": "shell",
+            "command": "gcc",
+            "args": [
+                "${workspaceFolder}/src/demo.c",
+                "${workspaceFolder}/src/game_logic.c",
+                "${workspaceFolder}/src/game_ui.c",
+                "${workspaceFolder}/src/net_client.c",
+                "-o",
+                "${workspaceFolder}/Debug/demo.exe",
+                "-g",
+                "-Wall",
+                "-std=c11",
+                "-I",
+                "${workspaceFolder}/include",
+                "-lws2_32",
+                "-lgdi32",
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "Build Server",
+            "type": "shell",
+            "command": "gcc",
+            "args": [
+                "${workspaceFolder}/src/net_server.c",
+                "-o",
+                "${workspaceFolder}/Debug/net_server.exe",
+                "-g",
+                "-Wall",
+                "-std=c11",
+                "-I",
+                "${workspaceFolder}/include",
+                "-lws2_32",
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
         }
-      }
-    },
-    {
-      "label": "Run",
-      "type": "shell",
-      "dependsOn": "Compile", //任务间的依赖关系
-      "command": "${workspaceRoot}\\Debug\\${fileBasenameNoExtension}.o", //linux 中运行 xxx.o 可执行文件
-      "windows": {
-        "command": "${workspaceRoot}\\Debug\\${fileBasenameNoExtension}.exe" //windows 中运行 xxx.exe 可执行文件
-      },
-      "args": [],
-      "presentation": {
-        "reveal": "always",
-        "focus": true
-      },
-      "problemMatcher": [],
-      "group": {
-        //此项用于给任务编组，这会有利于快捷键绑定
-        "kind": "build", //定义任务组
-        "isDefault": true //定义默认运行值
-      }
-    }
-  ]
+        
+    ]
 }

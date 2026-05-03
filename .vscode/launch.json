@@ -1,32 +1,45 @@
 {
-  // 使用 IntelliSense 了解相关属性。
-  // 悬停以查看现有属性的描述。
-  // 欲了解更多信息，请访问：https://go.microsoft.com/fwlink/?linkid=830387
-  "version": "0.2.0",
-  "configurations": [
-    
-    {
-      "name": "C++ Launch", //启动项的名称
-      "type": "cppdbg",
-      "request": "launch",
-      "targetArchitecture": "x64",
-      "program": "${workspaceRoot}/Debug/${fileBasenameNoExtension}.exe", //运行文件的路径
-      "args": ["10.26.0.3"], //运行文件的参数，一般没有
-      "stopAtEntry": false, //是否在入口点处暂停
-      "cwd": "${workspaceRoot}",
-      "environment": [],
-      "console": "externalConsole",
-      "internalConsoleOptions": "neverOpen",
-      "MIMode": "gdb",
-      "miDebuggerPath": "C:/TDM-GCC-64/bin/gdb64.exe", //DEBUG 程序的路径
-      "setupCommands": [
+    "version": "0.2.0",
+    "configurations": [
         {
-          "description": "Enable pretty-printing for gdb",
-          "text": "-enable-pretty-printing",
-          "ignoreFailures": false
+            "name": "Debug OnlineGame",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Debug/demo.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "miDebuggerPath": "C:\\TDM-GCC-64\\bin\\gdb.exe",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "Debug Net_server",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Debug/net_server.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "miDebuggerPath": "C:\\TDM-GCC-64\\bin\\gdb.exe",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
         }
-      ],
-      "preLaunchTask": "Compile" //运行前需要完成的任务
-    }
-  ]
+    ]
 }
