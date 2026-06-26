@@ -11,12 +11,14 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <winsock2.h>
+#include <ws2tcpip.h>
 #endif
 
 #define NET_FRAME_MAGIC 0x314E5447u
@@ -74,6 +76,12 @@ typedef struct {
 
 #ifdef _WIN32
 
+static inline void net_wire_set_low_latency(SOCKET s)
+{
+    BOOL yes = TRUE;
+    setsockopt(s, IPPROTO_TCP, TCP_NODELAY, (const char *)&yes, (int)sizeof(yes));
+}
+
 static inline int net_wire_send_all(SOCKET s, const void *buf, int len)
 {
     const char *p = (const char *)buf;
@@ -92,18 +100,20 @@ static inline int net_wire_send_all(SOCKET s, const void *buf, int len)
 static inline int net_wire_send_framed(SOCKET s, uint8_t msg_type, const void *payload, uint16_t payload_len)
 {
     NetFrameHeader hdr;
+    unsigned char frame[sizeof(NetFrameHeader) + NET_PROTO_MAX_PAYLOAD];
+    int frame_len = (int)sizeof(hdr) + (int)payload_len;
+
     if (payload_len > NET_PROTO_MAX_PAYLOAD)
         return -1;
     hdr.magic = NET_FRAME_MAGIC;
     hdr.msg_type = msg_type;
     hdr.payload_len = payload_len;
-    if (net_wire_send_all(s, &hdr, (int)sizeof(hdr)) != 0)
-        return -1;
-    if (payload_len > 0 && payload != NULL) {
-        if (net_wire_send_all(s, payload, (int)payload_len) != 0)
-            return -1;
-    }
-    return 0;
+
+    memcpy(frame, &hdr, sizeof(hdr));
+    if (payload_len > 0 && payload != NULL)
+        memcpy(frame + sizeof(hdr), payload, payload_len);
+
+    return net_wire_send_all(s, frame, frame_len);
 }
 
 #endif /* _WIN32 */

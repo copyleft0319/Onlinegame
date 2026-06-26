@@ -8,7 +8,7 @@
 #define MAX_SOCKETS 10000
 #define PORT 8888
 #define MAX_SERVER_BULLETS 256
-#define SERVER_TICK_DT 0.0333333f
+#define SERVER_TICK_DT 0.0166667f
 #define SERVER_FIRE_INTERVAL 0.18f
 
 typedef struct {

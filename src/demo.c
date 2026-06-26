@@ -56,7 +56,6 @@ int main(int argc, char *argv[])
     QueryPerformanceFrequency(&qpc_freq);
     QueryPerformanceCounter(&qpc_last);
 
-    float network_send_timer = 0.0f;
     bool running = true;
 
     while (running)
@@ -70,14 +69,9 @@ int main(int argc, char *argv[])
         game_ui_process_input(dt);
         game_ui_update_local_player(dt);
 
-        network_send_timer += dt;
-        if (network_send_timer >= 0.033f)
-        {
-            bool fire_event = game_ui_consume_fire_event();
-            net_client_send_player(get_local_player(),
-                                   game_ui_mouse_x(), game_ui_mouse_y(), fire_event);
-            network_send_timer = 0.0f;
-        }
+        bool fire_event = game_ui_consume_fire_event();
+        net_client_send_player(get_local_player(),
+                               game_ui_mouse_x(), game_ui_mouse_y(), fire_event);
 
         NetPacket pkt;
         net_client_recv_player(&pkt);
