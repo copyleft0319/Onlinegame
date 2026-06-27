@@ -63,6 +63,8 @@ int net_client_connect(const char *server_ip)
         return -1;
     }
 
+    net_wire_set_low_latency(g_client_socket);
+
     u_long mode = 1;
     ioctlsocket(g_client_socket, FIONBIO, &mode);
 
@@ -231,14 +233,18 @@ int net_client_recv_player(NetPacket *out_packet)
     if (g_client_socket == INVALID_SOCKET)
         return -1;
 
-    fd_set fds;
-    FD_ZERO(&fds);
-    FD_SET(g_client_socket, &fds);
-    struct timeval tv = {0, 0};
-    int res = select(0, &fds, NULL, NULL, &tv);
-
-    if (res > 0)
+    for (;;)
     {
+        fd_set fds;
+        FD_ZERO(&fds);
+        FD_SET(g_client_socket, &fds);
+        struct timeval tv = {0, 0};
+        int res = select(0, &fds, NULL, NULL, &tv);
+
+        if (res == 0)
+            break;
+        if (res < 0)
+            return -2;
         if (g_rx_stream_used >= sizeof(g_rx_stream))
             return -2;
 
@@ -248,10 +254,6 @@ int net_client_recv_player(NetPacket *out_packet)
             return -2;
 
         g_rx_stream_used += (size_t)n;
-    }
-    else if (res < 0)
-    {
-        return -2;
     }
 
     if (out_packet)
