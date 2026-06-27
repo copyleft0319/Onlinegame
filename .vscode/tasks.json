@@ -34,6 +34,7 @@
             "command": "gcc",
             "args": [
                 "${workspaceFolder}/src/net_server.c",
+                "${workspaceFolder}/src/server_log.c",
                 "-o",
                 "${workspaceFolder}/Debug/net_server.exe",
                 "-g",

@@ -1,3 +1,6 @@
+#ifndef NET_SERVER_H
+#define NET_SERVER_H
+
 #include <stdio.h>
 #include <winsock2.h>
 #include <stdbool.h>
@@ -43,3 +46,5 @@ void server_shoot(int owner_id, float px, float py, float tx, float ty);
 void server_update_bullets(float dt);
 void broadcast_framed(SOCKET sender, uint8_t msg_type, const void *payload, uint16_t payload_len);
 void server_broadcast_all(void);
+
+#endif

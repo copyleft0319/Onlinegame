@@ -4,6 +4,10 @@
 #include <windows.h>
 #include <stdio.h>
 
+// 计算帧间隔时间（秒），用于游戏逻辑的deltaTime
+// last: 上一帧时间戳（输出参数，会被更新为当前时间）
+// freq: 性能计数器频率
+// 返回: 两帧之间的时间间隔（秒），限制在0.25秒以内防止卡顿
 static float frame_delta_seconds(LARGE_INTEGER *last, LARGE_INTEGER freq)
 {
     LARGE_INTEGER now;
@@ -15,6 +19,9 @@ static float frame_delta_seconds(LARGE_INTEGER *last, LARGE_INTEGER freq)
     return dt;
 }
 
+// 帧末尾休眠，保证游戏帧率稳定
+// frame_start: 帧开始时的时间戳
+// freq: 性能计数器频率
 static void sleep_to_frame_end(LARGE_INTEGER frame_start, LARGE_INTEGER freq)
 {
     LARGE_INTEGER after;

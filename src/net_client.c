@@ -19,6 +19,9 @@ static size_t g_rx_stream_used;
 extern GameState g_state;
 extern void net_log(const char *fmt, ...);
 
+// 连接服务器
+// server_ip: 服务器IP地址（如 "127.0.0.1"）
+// 返回: 0成功，-1失败
 int net_client_connect(const char *server_ip)
 {
     WSADATA wsaData;
@@ -73,6 +76,11 @@ int net_client_connect(const char *server_ip)
     return 0;
 }
 
+// 发送玩家输入到服务器
+// player: 本地玩家数据
+// mouse_x, mouse_y: 鼠标位置
+// is_fire: 是否开火
+// 返回: 0成功，-1失败
 int net_client_send_player(Player *player, float mouse_x, float mouse_y, bool is_fire)
 {
     if (g_client_socket == INVALID_SOCKET)
@@ -101,6 +109,10 @@ int net_client_send_player(Player *player, float mouse_x, float mouse_y, bool is
     return 0;
 }
 
+// 应用玩家状态到本地游戏状态
+// np: 从服务器收到的玩家状态
+// out_packet: 输出参数，格式化后的玩家数据
+// got_player: 输出参数，标记是否成功处理
 static void apply_player_state(const NetPlayerState *np, NetPacket *out_packet, int *got_player)
 {
     int id = (int)np->id;
@@ -146,6 +158,9 @@ static void apply_player_state(const NetPlayerState *np, NetPacket *out_packet, 
     }
 }
 
+// 解析接收缓冲区中的数据流（处理TCP粘包）
+// out_packet: 输出参数，解析到的玩家数据包
+// 返回: 1=解析到玩家数据，0=正常但无玩家数据，-4=数据错误
 static int parse_rx_stream(NetPacket *out_packet)
 {
     int got_player = 0;
@@ -208,6 +223,9 @@ static int parse_rx_stream(NetPacket *out_packet)
     return 0;
 }
 
+// 接收服务器数据并解析（非阻塞）
+// out_packet: 输出参数，解析到的玩家数据
+// 返回: 1=收到玩家数据，0=无数据，-1/-2=错误或断开
 int net_client_recv_player(NetPacket *out_packet)
 {
     if (g_client_socket == INVALID_SOCKET)
@@ -242,6 +260,7 @@ int net_client_recv_player(NetPacket *out_packet)
     return parse_rx_stream(out_packet);
 }
 
+// 关闭客户端网络连接，清理资源
 void net_client_close(void)
 {
     if (g_client_socket != INVALID_SOCKET)

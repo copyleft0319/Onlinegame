@@ -21,6 +21,9 @@ static bool fire_event;
 static char net_logs[NET_LOG_MAX][NET_LOG_LEN] = {0};
 static int net_log_count = 0;
 
+// 记录网络日志（循环缓冲区，最多保留NET_LOG_MAX条）
+// fmt: 格式化字符串（printf风格）
+// ...: 可变参数列表
 void net_log(const char *fmt, ...)
 {
     for (int i = 0; i < NET_LOG_MAX - 1; i++)
@@ -35,6 +38,8 @@ void net_log(const char *fmt, ...)
         net_log_count++;
 }
 
+// Windows窗口消息处理回调函数
+// 处理键盘、鼠标事件，记录到全局变量
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg)
@@ -66,6 +71,8 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
     return 0;
 }
 
+// 初始化游戏UI（创建窗口、双缓冲、设置初始状态）
+// 返回: true成功，false失败
 bool game_ui_init(void)
 {
     g_hInst = GetModuleHandle(NULL);
@@ -96,6 +103,8 @@ bool game_ui_init(void)
     return true;
 }
 
+// 处理Windows消息队列（非阻塞，防止界面卡死）
+// 返回: true继续运行，false收到WM_QUIT退出
 bool game_ui_pump_messages(void)
 {
     MSG msg;
@@ -109,6 +118,8 @@ bool game_ui_pump_messages(void)
     return true;
 }
 
+// 处理键盘和鼠标输入，更新目标位置
+// dt: 帧间隔时间（秒）
 void game_ui_process_input(float dt)
 {
     float dx = 0, dy = 0;
@@ -143,6 +154,8 @@ void game_ui_process_input(float dt)
     }
 }
 
+// 平滑更新本地玩家位置（插值到目标位置）
+// dt: 帧间隔时间（秒）
 void game_ui_update_local_player(float dt)
 {
     (void)dt;
@@ -152,6 +165,7 @@ void game_ui_update_local_player(float dt)
     local->y += (target_y - local->y) * t;
 }
 
+// 绘制游戏场景（背景、子弹、玩家、HUD信息）
 static void draw_scene(void)
 {
     RECT rc;
@@ -213,6 +227,7 @@ static void draw_scene(void)
     DeleteObject(hSmallFont);
 }
 
+// 将双缓冲内容渲染到窗口
 void game_ui_render(void)
 {
     if (!g_hWnd || !g_memDC)
@@ -224,6 +239,7 @@ void game_ui_render(void)
     ReleaseDC(g_hWnd, hdc);
 }
 
+// 关闭UI，释放窗口资源
 void game_ui_shutdown(void)
 {
     if (g_hBitmap)
@@ -243,16 +259,20 @@ void game_ui_shutdown(void)
     }
 }
 
+// 获取当前鼠标X坐标
 float game_ui_mouse_x(void)
 {
     return (float)g_mouse.x;
 }
 
+// 获取当前鼠标Y坐标
 float game_ui_mouse_y(void)
 {
     return (float)g_mouse.y;
 }
 
+// 消费一次开火事件（获取后重置状态，防止连续触发）
+// 返回: true表示发生了开火事件
 bool game_ui_consume_fire_event(void)
 {
     bool fired = fire_event;

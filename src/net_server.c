@@ -1,4 +1,5 @@
 #include "net_server.h"
+#include "server_log.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,6 +24,8 @@ typedef struct
 
 static NetServerClientRx s_srv_rx[MAX_CLIENTS];
 
+// 初始化指定ID的玩家属性（出生位置、血量等）
+// id: 玩家ID
 static void server_init_player(int id)
 {
     server_players[id].x = 100.0f + id * 40.0f;
@@ -38,6 +41,10 @@ static void server_init_player(int id)
     latest_inputs[id].y = server_players[id].y;
 }
 
+// 创建子弹（服务器端处理射击）
+// owner_id: 射击玩家ID
+// px, py: 射击起始位置
+// tx, ty: 目标位置（决定方向）
 void server_shoot(int owner_id, float px, float py, float tx, float ty)
 {
     if (owner_id < 0 || owner_id >= MAX_PLAYERS)
@@ -79,6 +86,10 @@ void server_shoot(int owner_id, float px, float py, float tx, float ty)
         bullet_count = slot + 1;
 }
 
+// 碰撞检测（判断两点距离是否小于碰撞半径）
+// x1,y1: 子弹位置
+// x2,y2: 目标位置
+// 返回: true表示发生碰撞
 static bool hit_test(float x1, float y1, float x2, float y2)
 {
     float dx = x1 - x2;
@@ -86,6 +97,8 @@ static bool hit_test(float x1, float y1, float x2, float y2)
     return (dx * dx + dy * dy) < 15 * 15;
 }
 
+// 更新子弹位置并处理碰撞（移动、边界检测、命中判定）
+// dt: 帧间隔时间（秒）
 void server_update_bullets(float dt)
 {
     for (int i = 0; i < bullet_count; i++)
@@ -108,8 +121,6 @@ void server_update_bullets(float dt)
             ServerPlayer *target = &server_players[k];
             if (!target->active)
                 continue;
-            if (target->invisible)
-                continue;
             if (b->owner_id == k)
                 continue;
             if (!b->active)
@@ -128,7 +139,10 @@ void server_update_bullets(float dt)
                     latest_inputs[k].x = target->x;
                     latest_inputs[k].y = target->y;
                     if (b->owner_id >= 0 && b->owner_id < MAX_PLAYERS)
+                    {
                         server_players[b->owner_id].kills++;
+                        server_log_player_kill(b->owner_id, k);
+                    }
                     target->deaths++;
                 }
             }
@@ -139,6 +153,11 @@ void server_update_bullets(float dt)
         bullet_count--;
 }
 
+// 向所有客户端广播消息（除发送者外）
+// sender: 发送者套接字（0表示广播给所有人）
+// msg_type: 消息类型
+// payload: 消息数据
+// payload_len: 消息数据长度
 void broadcast_framed(SOCKET sender, uint8_t msg_type, const void *payload, uint16_t payload_len)
 {
     for (int i = 0; i < client_count; i++)
@@ -148,6 +167,7 @@ void broadcast_framed(SOCKET sender, uint8_t msg_type, const void *payload, uint
     }
 }
 
+// 广播所有玩家和子弹状态到所有客户端
 void server_broadcast_all(void)
 {
     for (int i = 0; i < MAX_PLAYERS; i++)
@@ -188,6 +208,8 @@ void server_broadcast_all(void)
     }
 }
 
+// 应用客户端输入更新玩家状态（位置、隐身、开火冷却）
+// dt: 帧间隔时间（秒）
 static void server_apply_inputs(float dt)
 {
     for (int i = 0; i < MAX_PLAYERS; i++)
@@ -228,6 +250,8 @@ static void server_apply_inputs(float dt)
     }
 }
 
+// 服务器主tick（每帧执行：应用输入→更新子弹→广播状态）
+// dt: 帧间隔时间（秒）
 static void server_tick(float dt)
 {
     server_apply_inputs(dt);
@@ -239,6 +263,10 @@ static void server_tick(float dt)
 // slot：该客户端在 clients[] 数组中的下标位置
 // s：要断开的客户端套接字
 // reason：断开原因（用于日志打印）
+// 断开指定客户端连接并清理资源
+// slot: 客户端在clients[]数组中的下标
+// s: 要断开的客户端套接字
+// reason: 断开原因（用于日志打印）
 static void server_disconnect_slot(int slot, SOCKET s, const char *reason)
 {
     // 1. 通过套接字 s 反查对应的玩家 ID
@@ -277,11 +305,11 @@ static void server_disconnect_slot(int slot, SOCKET s, const char *reason)
     if (s >= 0 && s < MAX_SOCKETS)
         socket2id[s] = -1;
 
-    // 7. 关闭套接字，释放系统资源
-    closesocket(s);
+    if (die_id >= 0 && die_id < MAX_PLAYERS)
+    {
+        server_log_player_leave(die_id);
+    }
 
-    // 8. 从 clients[] 数组中删除该客户端（数组前移覆盖）
-    // 从断开的位置开始，后面所有客户端往前挪一位
     for (int j = slot; j < client_count - 1; j++)
     {
         // 套接字数组前移
@@ -294,11 +322,10 @@ static void server_disconnect_slot(int slot, SOCKET s, const char *reason)
     client_count--;
 }
 
-/* 功能：尝试解析客户端发来的一整条完整消息（处理TCP粘包/拆包）
-slot：客户端在数组中的下标
-s：客户端套接字
-返回值：0=正常，-1=解析失败（会断开客户端）
-*/
+// 解析客户端接收缓冲区中的完整消息（处理TCP粘包）
+// slot: 客户端在数组中的下标
+// s: 客户端套接字
+// 返回: 0=正常，-1=解析失败（会断开客户端）
 static int server_try_parse_client_buffer(int slot, SOCKET s)
 {
     // 拿到当前客户端的接收缓冲区（存放收到的二进制数据）
@@ -389,6 +416,7 @@ static int server_try_parse_client_buffer(int slot, SOCKET s)
     return 0;
 }
 
+// 服务器主函数（初始化网络→监听端口→处理客户端连接→游戏循环）
 int main(void)
 {
     WSADATA wsa;
@@ -401,15 +429,14 @@ int main(void)
         id2socket[i] = INVALID_SOCKET;
         socket2id[i] = -1;
     }
-    /*
-    Start WinSock2 API ,load ws2_32.dll
-    MAKEWORD(2, 2) means version 2.2
-    &wsa is a pointer to a WSADATA structure
-    WSADATA is a structure that contains the version of the WinSock API
-    and the version of the WinSock implementation
-    WSAStartup is a function that initializes the WinSock API
-    */
-    WSAStartup(MAKEWORD(2, 2), &wsa);
+    
+    WSAStartup(MAKEWORD(2, 2), &wsa);//加载2.2版本的动态资源winsock库，初始化api
+    if (server_log_init(server_players, MAX_PLAYERS) != 0)
+    {
+        printf("server log init failed\n");
+    }
+    server_log_save_match("server startup");
+
     listen_sock = socket(AF_INET, SOCK_STREAM, 0);
 
     u_long non_block = 1;
@@ -494,6 +521,7 @@ int main(void)
                         s_srv_rx[client_count].used = 0;
                         client_count++;
                         server_init_player(found_id);
+                        server_log_player_join(found_id);
                         // 强制转化为32位4字节的有符号整数
                         int32_t assign = (int32_t)found_id;
                         net_wire_send_framed(new_sock, NET_WIRE_MSG_SRV_YOUR_ID,
