@@ -24,10 +24,6 @@ typedef struct
 
 static NetServerClientRx s_srv_rx[MAX_CLIENTS];
 
-<<<<<<< HEAD
-// 初始化指定ID的玩家属性（出生位置、血量等）
-// id: 玩家ID
-=======
 /**
  * @brief 初始化指定玩家槽位的服务器端状态。
  *
@@ -39,7 +35,6 @@ static NetServerClientRx s_srv_rx[MAX_CLIENTS];
  *
  * @sideeffect 修改 server_players[id] 和 latest_inputs[id]。
  */
->>>>>>> 4e30ef1d56a0bcbb360d443adc2a598042fd03c4
 static void server_init_player(int id)
 {
     server_players[id].x = 100.0f + id * 40.0f;
@@ -55,12 +50,6 @@ static void server_init_player(int id)
     latest_inputs[id].y = server_players[id].y;
 }
 
-<<<<<<< HEAD
-// 创建子弹（服务器端处理射击）
-// owner_id: 射击玩家ID
-// px, py: 射击起始位置
-// tx, ty: 目标位置（决定方向）
-=======
 /**
  * @brief 在服务器端生成一颗由玩家发射的子弹。
  *
@@ -77,7 +66,6 @@ static void server_init_player(int id)
  *
  * @sideeffect 可能修改 server_bullets、bullet_count 和 s_next_bullet_id。
  */
->>>>>>> 4e30ef1d56a0bcbb360d443adc2a598042fd03c4
 void server_shoot(int owner_id, float px, float py, float tx, float ty)
 {
     if (owner_id < 0 || owner_id >= MAX_PLAYERS)
@@ -119,12 +107,6 @@ void server_shoot(int owner_id, float px, float py, float tx, float ty)
         bullet_count = slot + 1;
 }
 
-<<<<<<< HEAD
-// 碰撞检测（判断两点距离是否小于碰撞半径）
-// x1,y1: 子弹位置
-// x2,y2: 目标位置
-// 返回: true表示发生碰撞
-=======
 /**
  * @brief 判断两个碰撞点是否命中。
  *
@@ -138,7 +120,6 @@ void server_shoot(int owner_id, float px, float py, float tx, float ty)
  *
  * @return 命中返回 true，否则返回 false。
  */
->>>>>>> 4e30ef1d56a0bcbb360d443adc2a598042fd03c4
 static bool hit_test(float x1, float y1, float x2, float y2)
 {
     float dx = x1 - x2;
@@ -146,10 +127,6 @@ static bool hit_test(float x1, float y1, float x2, float y2)
     return (dx * dx + dy * dy) < 15 * 15;
 }
 
-<<<<<<< HEAD
-// 更新子弹位置并处理碰撞（移动、边界检测、命中判定）
-// dt: 帧间隔时间（秒）
-=======
 /**
  * @brief 推进所有活跃子弹，并处理越界、命中和死亡复活逻辑。
  *
@@ -166,7 +143,6 @@ static bool hit_test(float x1, float y1, float x2, float y2)
  *
  * @sideeffect 修改 server_bullets、server_players、latest_inputs 和 bullet_count。
  */
->>>>>>> 4e30ef1d56a0bcbb360d443adc2a598042fd03c4
 void server_update_bullets(float dt)
 {
     for (int i = 0; i < bullet_count; i++)
@@ -209,7 +185,6 @@ void server_update_bullets(float dt)
                     if (b->owner_id >= 0 && b->owner_id < MAX_PLAYERS)
                     {
                         server_players[b->owner_id].kills++;
-                        server_log_player_kill(b->owner_id, k);
                     }
                     target->deaths++;
                 }
@@ -221,13 +196,6 @@ void server_update_bullets(float dt)
         bullet_count--;
 }
 
-<<<<<<< HEAD
-// 向所有客户端广播消息（除发送者外）
-// sender: 发送者套接字（0表示广播给所有人）
-// msg_type: 消息类型
-// payload: 消息数据
-// payload_len: 消息数据长度
-=======
 /**
  * @brief 向除 sender 外的所有已连接客户端发送一帧网络消息。
  *
@@ -242,7 +210,6 @@ void server_update_bullets(float dt)
  *
  * @sideeffect 通过 socket 向客户端发送数据。
  */
->>>>>>> 4e30ef1d56a0bcbb360d443adc2a598042fd03c4
 void broadcast_framed(SOCKET sender, uint8_t msg_type, const void *payload, uint16_t payload_len)
 {
     for (int i = 0; i < client_count; i++)
@@ -252,9 +219,6 @@ void broadcast_framed(SOCKET sender, uint8_t msg_type, const void *payload, uint
     }
 }
 
-<<<<<<< HEAD
-// 广播所有玩家和子弹状态到所有客户端
-=======
 /**
  * @brief 广播当前服务器上的全部玩家和子弹状态。
  *
@@ -264,7 +228,6 @@ void broadcast_framed(SOCKET sender, uint8_t msg_type, const void *payload, uint
  *
  * @sideeffect 通过 broadcast_framed 向所有客户端发送状态帧。
  */
->>>>>>> 4e30ef1d56a0bcbb360d443adc2a598042fd03c4
 void server_broadcast_all(void)
 {
     for (int i = 0; i < MAX_PLAYERS; i++)
@@ -305,10 +268,6 @@ void server_broadcast_all(void)
     }
 }
 
-<<<<<<< HEAD
-// 应用客户端输入更新玩家状态（位置、隐身、开火冷却）
-// dt: 帧间隔时间（秒）
-=======
 /**
  * @brief 将客户端最近一次输入应用到服务器权威玩家状态。
  *
@@ -321,7 +280,6 @@ void server_broadcast_all(void)
  *
  * @sideeffect 修改 server_players、latest_inputs，且可能生成新子弹。
  */
->>>>>>> 4e30ef1d56a0bcbb360d443adc2a598042fd03c4
 static void server_apply_inputs(float dt)
 {
     for (int i = 0; i < MAX_PLAYERS; i++)
@@ -361,10 +319,6 @@ static void server_apply_inputs(float dt)
     }
 }
 
-<<<<<<< HEAD
-// 服务器主tick（每帧执行：应用输入→更新子弹→广播状态）
-// dt: 帧间隔时间（秒）
-=======
 /**
  * @brief 执行一次固定步长的服务器游戏逻辑更新。
  *
@@ -374,7 +328,6 @@ static void server_apply_inputs(float dt)
  *
  * @param dt 本次 tick 的固定时间步长，单位为秒。
  */
->>>>>>> 4e30ef1d56a0bcbb360d443adc2a598042fd03c4
 static void server_tick(float dt)
 {
     server_apply_inputs(dt);
@@ -382,16 +335,6 @@ static void server_tick(float dt)
     server_broadcast_all();
 }
 
-<<<<<<< HEAD
-// 服务器断开指定客户端连接的核心函数
-// slot：该客户端在 clients[] 数组中的下标位置
-// s：要断开的客户端套接字
-// reason：断开原因（用于日志打印）
-// 断开指定客户端连接并清理资源
-// slot: 客户端在clients[]数组中的下标
-// s: 要断开的客户端套接字
-// reason: 断开原因（用于日志打印）
-=======
 /**
  * @brief 断开指定客户端槽位，并清理其玩家与接收缓冲状态。
  *
@@ -409,7 +352,6 @@ static void server_tick(float dt)
  *
  * @sideeffect 修改连接数组、接收缓冲、玩家状态、socket 映射并关闭 socket。
  */
->>>>>>> 4e30ef1d56a0bcbb360d443adc2a598042fd03c4
 static void server_disconnect_slot(int slot, SOCKET s, const char *reason)
 {
     // 1. 通过套接字 s 反查对应的玩家 ID
@@ -448,11 +390,6 @@ static void server_disconnect_slot(int slot, SOCKET s, const char *reason)
     if (s >= 0 && s < MAX_SOCKETS)
         socket2id[s] = -1;
 
-    if (die_id >= 0 && die_id < MAX_PLAYERS)
-    {
-        server_log_player_leave(die_id);
-    }
-
     for (int j = slot; j < client_count - 1; j++)
     {
         // 套接字数组前移
@@ -465,12 +402,6 @@ static void server_disconnect_slot(int slot, SOCKET s, const char *reason)
     client_count--;
 }
 
-<<<<<<< HEAD
-// 解析客户端接收缓冲区中的完整消息（处理TCP粘包）
-// slot: 客户端在数组中的下标
-// s: 客户端套接字
-// 返回: 0=正常，-1=解析失败（会断开客户端）
-=======
 /**
  * @brief 从指定客户端的接收缓冲区中解析完整协议帧。
  *
@@ -491,7 +422,6 @@ static void server_disconnect_slot(int slot, SOCKET s, const char *reason)
  *
  * @sideeffect 消耗 s_srv_rx[slot] 中已解析的数据，并可能修改 latest_inputs。
  */
->>>>>>> 4e30ef1d56a0bcbb360d443adc2a598042fd03c4
 static int server_try_parse_client_buffer(int slot, SOCKET s)
 {
     // 拿到当前客户端的接收缓冲区（存放收到的二进制数据）
@@ -582,9 +512,6 @@ static int server_try_parse_client_buffer(int slot, SOCKET s)
     return 0;
 }
 
-<<<<<<< HEAD
-// 服务器主函数（初始化网络→监听端口→处理客户端连接→游戏循环）
-=======
 /**
  * @brief 启动并运行游戏服务器主循环。
  *
@@ -604,7 +531,6 @@ static int server_try_parse_client_buffer(int slot, SOCKET s)
  *
  * @return 当前实现不会正常返回；若未来加入退出条件，按 C 约定返回进程状态码。
  */
->>>>>>> 4e30ef1d56a0bcbb360d443adc2a598042fd03c4
 int main(void)
 {
     WSADATA wsa;
@@ -623,7 +549,6 @@ int main(void)
     {
         printf("server log init failed\n");
     }
-    server_log_save_match("server startup");
 
     listen_sock = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -708,7 +633,6 @@ int main(void)
                         s_srv_rx[client_count].used = 0;
                         client_count++;
                         server_init_player(found_id);
-                        server_log_player_join(found_id);
                         // 强制转化为32位4字节的有符号整数
                         int32_t assign = (int32_t)found_id;
                         net_wire_send_framed(new_sock, NET_WIRE_MSG_SRV_YOUR_ID,

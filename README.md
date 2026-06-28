@@ -62,3 +62,49 @@ TCP是流式协议，一开始不做缓冲区截断读取，收到的数据包�
 
 
 
+
+# 系统功能模块划分
+
+## 模块关系图
+
+```mermaid
+flowchart LR
+    User[玩家输入/窗口事件] --> UI[game_ui.c / game_ui.h\n窗口、输入、渲染、HUD日志]
+    UI --> Logic[game_logic.c / game_logic.h\n客户端游戏状态]
+    Demo[demo.c\n客户端主循环] --> UI
+    Demo --> Logic
+    Demo --> ClientNet[net_client.c / net_client.h\n客户端网络收发]
+    ClientNet --> Proto[net_proto.h\n网络帧和消息格式]
+    Proto --> Server[net_server.c / net_server.h\n服务器连接管理和权威结算]
+    Server --> ServerLogic[服务器玩家/子弹状态\n命中、击杀、广播]
+    Server --> Log[server_log.c / server_log.h\n运行日志和K/D战报]
+    Log --> Files[logs/\nserver_runtime.log\nplayer_stats.txt\nlast_match_scoreboard.txt]
+    Server --> Proto
+    ClientNet --> Logic
+```
+
+## 按文件划分
+
+| 文件 | 模块 | 主要功能 |
+| --- | --- | --- |
+| `src/demo.c` | 客户端入口/主循环 | 初始化游戏状态、创建窗口、连接服务器；每帧处理输入、发送玩家状态、接收服务器状态、更新本地表现并渲染画面。 |
+| `src/game_ui.c` / `include/game_ui.h` | 客户端UI与输入模块 | 基于 Win32 创建游戏窗口；处理键盘、鼠标事件；维护开火事件、鼠标坐标、网络调试日志；绘制玩家、子弹、HUD 和日志文本。 |
+| `src/game_logic.c` / `include/game_logic.h` | 客户端游戏状态模块 | 定义并维护 `GameState`、`Player`、`Bullet`、`RemoteBullet`；保存本地玩家、远程玩家和远程子弹；提供移动、隐身、子弹 upsert、状态查询等接口。 |
+| `src/net_client.c` / `include/net_client.h` | 客户端网络模块 | 使用 WinSock 连接服务器；把本地玩家输入打包为 `NetClientInput` 发送；接收服务器的玩家/子弹状态并同步到 `GameState`。 |
+| `include/net_proto.h` | 网络协议模块 | 定义 TCP 帧头 `NetFrameHeader`、消息类型、输入包、玩家状态包、子弹状态包；提供 `net_wire_send_framed` 等按帧发送工具，解决 TCP 粘包/半包问题。 |
+| `src/net_server.c` / `include/net_server.h` | 服务器核心模块 | 创建监听 socket；分配玩家 ID；维护 `id2socket`、`socket2id`、客户端列表；解析客户端输入；统一更新玩家、子弹、命中、击杀和死亡；广播权威状态。 |
+| `src/server_log.c` / `include/server_log.h` | 服务器日志模块 | 记录服务器启动、玩家加入/离开、击杀事件；使用 `SetConsoleCtrlHandler` 在 Ctrl+C 或关闭控制台时保存对局结果；用 `fscanf/fprintf` 读写累计 K/D 和本局战报。 |
+
+## 数据流说明
+
+客户端侧的数据流是：`game_ui.c` 收集输入，`demo.c` 每帧调用 `net_client.c` 发送输入包，服务器返回状态后由 `net_client.c` 写入 `game_logic.c` 中的 `GameState`，最后 `game_ui.c` 从 `GameState` 读取数据并绘制。
+
+服务器侧的数据流是：`net_server.c` 接收所有客户端输入，将输入应用到服务器保存的 `ServerPlayer` 和 `ServerBullet`，由服务器统一判断子弹移动、命中、击杀和复活，再把权威状态广播给客户端。服务器退出时，`server_log.c` 根据 `ServerPlayer.kills/deaths` 生成纯文本 K/D 战报。
+
+## 日志输出文件
+
+| 文件 | 内容 |
+| --- | --- |
+| `logs/server_runtime.log` | 服务器运行日志，包括启动、玩家加入、玩家离开、击杀事件、保存对局等。 |
+| `logs/player_stats.txt` | 玩家累计数据，格式为 `id total_kills total_deaths matches`，方便用 `fscanf` 读取。 |
+| `logs/last_match_scoreboard.txt` | 最近一局的纯文本 K/D 排行榜，包含玩家 ID、在线状态、Kills、Deaths、K/D 和击杀压力条。 |

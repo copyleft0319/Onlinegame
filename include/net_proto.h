@@ -27,6 +27,14 @@
 #define NET_INPUT_FIRE      0x01u
 #define NET_INPUT_INVISIBLE 0x02u
 
+/**
+ * @brief 传输层消息码，用于区分不同类型的网络包。
+ *
+ * NET_WIRE_MSG_CLIENT_INPUT: 客户端输入消息；
+ * NET_WIRE_MSG_SRV_PLAYER: 服务器发送玩家状态；
+ * NET_WIRE_MSG_SRV_BULLET: 服务器发送子弹状态；
+ * NET_WIRE_MSG_SRV_YOUR_ID: 服务器发送客户端自身 ID。
+ */
 enum NetWireMsgType {
     NET_WIRE_MSG_CLIENT_INPUT = 1,
     NET_WIRE_MSG_SRV_PLAYER = 2,
@@ -35,12 +43,28 @@ enum NetWireMsgType {
 };
 
 #pragma pack(push, 1)
+/**
+ * @brief 网络帧头部，用于消息分帧和长度校验。
+ *
+ * magic: 固定魔数，用于检测帧对齐和数据有效性；
+ * msg_type: 消息类型；
+ * payload_len: 后续负载字节数。
+ */
 typedef struct {
     uint32_t magic;
     uint8_t  msg_type;
     uint16_t payload_len;
 } NetFrameHeader;
 
+/**
+ * @brief 客户端向服务器发送的输入状态。
+ *
+ * seq: 输入帧序号，用于服务端按序处理；
+ * id: 客户端玩家 ID；
+ * x, y: 客户端当前位置；
+ * mouse_x, mouse_y: 鼠标目标坐标；
+ * buttons: 输入按键掩码，例如开火/隐身状态。
+ */
 typedef struct {
     uint32_t seq;
     int32_t id;
@@ -51,6 +75,17 @@ typedef struct {
     uint8_t buttons;
 } NetClientInput;
 
+/**
+ * @brief 服务器发送给客户端的玩家状态包。
+ *
+ * id: 玩家 ID；
+ * x, y: 玩家当前位置；
+ * hp: 当前生命值；
+ * kills: 当前击杀数；
+ * deaths: 当前死亡数；
+ * active: 玩家是否在线；
+ * invisible: 是否处于隐身状态。
+ */
 typedef struct {
     int32_t id;
     float x;
@@ -62,6 +97,16 @@ typedef struct {
     uint8_t invisible;
 } NetPlayerState;
 
+/**
+ * @brief 服务器发送给客户端的子弹状态包。
+ *
+ * bullet_id: 子弹唯一 ID；
+ * owner_id: 发射者玩家 ID；
+ * x, y: 子弹当前位置；
+ * dx, dy: 子弹运动方向；
+ * speed: 子弹速度；
+ * active: 子弹是否仍然有效。
+ */
 typedef struct {
     uint32_t bullet_id;
     int32_t owner_id;
